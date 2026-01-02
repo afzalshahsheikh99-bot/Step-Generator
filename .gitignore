@@ -22,32 +22,29 @@ wheels/
 
 # Virtual Environment
 venv/
-ENV/
 env/
+ENV/
 .venv
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
 
 # Flask
 instance/
 .webassets-cache
 
-# Uploads
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Application specific
 uploads/
 *.zip
-
-# Environment variables
-.env
-.env.local
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
 *.log
+app.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
