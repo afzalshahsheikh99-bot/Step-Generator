@@ -29,7 +29,7 @@ API_KEYS = [
 ]
 
 # Model name for Gemini
-MODEL_NAME = 'gemini-2.5-flash'
+MODEL_NAME = 'gemini-3-flash-preview'
 
 
 def get_or_create_session_id():
