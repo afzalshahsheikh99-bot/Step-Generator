@@ -9,6 +9,7 @@ import glob
 import re
 import tempfile
 import time
+import uuid
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, send_file, after_this_request
 from werkzeug.utils import secure_filename
@@ -29,6 +30,20 @@ API_KEYS = [
 
 # Model name for Gemini
 MODEL_NAME = 'gemini-2.5-flash'
+
+
+def get_or_create_session_id():
+    """Return a stable per-browser session identifier.
+
+    Flask's default SecureCookieSession does not expose a .sid attribute, so we
+    generate our own and store it in the signed session cookie.
+    """
+    session_id = session.get('sid')
+    if not session_id:
+        session_id = uuid.uuid4().hex
+        session['sid'] = session_id
+        session.modified = True
+    return session_id
 
 
 def get_next_api_key():
@@ -470,7 +485,18 @@ def upload():
     
     # Save the uploaded file
     filename = secure_filename(file.filename)
-    upload_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session.sid}_{filename}")
+
+    # If the user uploads a new zip in the same browser session, clean up the old one.
+    previous_upload = session.get('uploaded_file')
+    if previous_upload and os.path.exists(previous_upload):
+        try:
+            os.remove(previous_upload)
+        except OSError:
+            pass
+
+    session_id = get_or_create_session_id()
+    upload_token = uuid.uuid4().hex[:8]
+    upload_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session_id}_{upload_token}_{filename}")
     file.save(upload_path)
     
     # Store the path in session
