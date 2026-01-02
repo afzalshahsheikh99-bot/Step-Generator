@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent - Notes Step Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            padding: 40px;
+            text-align: center;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 40px;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .upload-text {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .upload-hint {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #667eea;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .content-section {
+            display: none;
+            padding: 40px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .toolbar-title {
+            font-size: 1.5em;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(56, 239, 125, 0.4);
+        }
+
+        .findings-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .finding-card {
+            background: #f8f9ff;
+            border: 2px solid #e0e7ff;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .finding-card:hover {
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .finding-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .finding-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .finding-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .toggle-icon {
+            font-size: 1.5em;
+            transition: transform 0.3s ease;
+        }
+
+        .finding-content {
+            display: none;
+            padding: 25px;
+        }
+
+        .finding-content.show {
+            display: block;
+        }
+
+        .description-box {
+            background: white;
+            border: 2px solid #e0e7ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .description-label {
+            font-size: 0.9em;
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .description-text {
+            color: #333;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .children-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .child-card {
+            background: white;
+            border: 2px solid #e0e7ff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .child-header {
+            background: #e8ebff;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .child-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .child-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .child-content.show {
+            display: block;
+        }
+
+        .nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .node-card {
+            background: #f8f9ff;
+            border: 2px solid #e0e7ff;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .node-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .node-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .node-title {
+            font-size: 1em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .node-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+
+        .node-body {
+            padding: 15px;
+        }
+
+        .node-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .node-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.completed {
+            background: #38ef7d;
+        }
+
+        .status-dot.pending {
+            background: #ff6b6b;
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-generate:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-generate.loading {
+            opacity: 0.7;
+        }
+
+        .generated-description {
+            background: white;
+            border: 2px solid #38ef7d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .generated-description h4 {
+            color: #38ef7d;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .generated-description pre {
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 0.9em;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            margin: 0;
+        }
+
+        .image-preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .image-preview-modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2em;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            text-align: center;
+        }
+
+        .modal-body img {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 8px;
+        }
+
+        .btn-view-images {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view-images:hover {
+            background: #764ba2;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-error {
+            background: #fee;
+            border: 2px solid #fcc;
+            color: #c33;
+        }
+
+        .alert-success {
+            background: #efe;
+            border: 2px solid #cfc;
+            color: #3c3;
+        }
+
+        .progress-bar {
+            display: none;
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar.show {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .generating {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Agent - Notes Step Generator</h1>
+            <p>Upload your notes.zip file and let AI generate detailed step-by-step instructions from images</p>
+        </div>
+
+        <div class="upload-section">
+            <div id="uploadArea" class="upload-area">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Drop your notes.zip file here</div>
+                <div class="upload-hint">or click to browse</div>
+                <input type="file" id="fileInput" accept=".zip">
+            </div>
+
+            <div id="loadingIndicator" class="loading">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Processing your notes.zip file...</div>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div id="contentSection" class="content-section">
+            <div class="toolbar">
+                <div class="toolbar-title">📋 Findings Structure</div>
+                <div>
+                    <button class="btn btn-secondary" onclick="resetUpload()">
+                        🔄 Upload New File
+                    </button>
+                    <button class="btn btn-success" onclick="downloadZip()">
+                        ⬇️ Download Updated ZIP
+                    </button>
+                </div>
+            </div>
+
+            <div id="findingsContainer" class="findings-container"></div>
+        </div>
+    </div>
+
+    <div id="imagePreviewModal" class="image-preview-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Image Preview</div>
+                <button class="modal-close" onclick="closeImageModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="Preview">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStructure = null;
+        let currentFindingDescription = '';
+
+        // Initialize drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const contentSection = document.getElementById('contentSection');
+        const findingsContainer = document.getElementById('findingsContainer');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.zip')) {
+                showAlert('Please upload a .zip file', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            uploadArea.style.display = 'none';
+            loadingIndicator.style.display = 'block';
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingIndicator.style.display = 'none';
+                
+                if (data.success) {
+                    currentStructure = data.structure;
+                    renderStructure(data.structure);
+                    contentSection.style.display = 'block';
+                    showAlert(data.message, 'success');
+                } else {
+                    uploadArea.style.display = 'block';
+                    showAlert(data.error || 'Upload failed', 'error');
+                }
+            })
+            .catch(error => {
+                loadingIndicator.style.display = 'none';
+                uploadArea.style.display = 'block';
+                showAlert('Error uploading file: ' + error.message, 'error');
+            });
+        }
+
+        function renderStructure(structure) {
+            findingsContainer.innerHTML = '';
+            
+            structure.forEach((finding, findingIndex) => {
+                const findingCard = document.createElement('div');
+                findingCard.className = 'finding-card';
+                
+                findingCard.innerHTML = `
+                    <div class="finding-header" onclick="toggleFinding(${findingIndex})">
+                        <div class="finding-title">
+                            <span>📁</span>
+                            <span>${finding.id}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span class="finding-badge">${finding.child_count} Child Nodes</span>
+                            <span class="toggle-icon" id="toggleIcon${findingIndex}">▼</span>
+                        </div>
+                    </div>
+                    <div class="finding-content" id="findingContent${findingIndex}">
+                        <div class="description-box">
+                            <div class="description-label">Finding Description</div>
+                            <div class="description-text">${finding.description || 'No description available'}</div>
+                        </div>
+                        <div class="children-container" id="childrenContainer${findingIndex}"></div>
+                    </div>
+                `;
+                
+                findingsContainer.appendChild(findingCard);
+                
+                // Render children
+                const childrenContainer = findingCard.querySelector(`#childrenContainer${findingIndex}`);
+                finding.children.forEach((child, childIndex) => {
+                    const childCard = document.createElement('div');
+                    childCard.className = 'child-card';
+                    
+                    childCard.innerHTML = `
+                        <div class="child-header" onclick="toggleChild(${findingIndex}, ${childIndex})">
+                            <div class="child-title">
+                                <span>📂</span>
+                                <span>${child.id}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <span style="font-size: 0.9em; color: #666;">${child.node_count} Steps</span>
+                                <span class="toggle-icon" id="childToggleIcon${findingIndex}_${childIndex}">▼</span>
+                            </div>
+                        </div>
+                        <div class="child-content" id="childContent${findingIndex}_${childIndex}">
+                            <div class="nodes-grid" id="nodesGrid${findingIndex}_${childIndex}"></div>
+                        </div>
+                    `;
+                    
+                    childrenContainer.appendChild(childCard);
+                    
+                    // Render nodes
+                    const nodesGrid = childCard.querySelector(`#nodesGrid${findingIndex}_${childIndex}`);
+                    child.nodes.forEach((node, nodeIndex) => {
+                        const nodeCard = document.createElement('div');
+                        nodeCard.className = 'node-card';
+                        
+                        const isCompleted = node.has_description;
+                        
+                        nodeCard.innerHTML = `
+                            <div class="node-header">
+                                <div class="node-title">
+                                    <span>📸</span>
+                                    <span>Step ${node.id}</span>
+                                </div>
+                                <span class="node-badge">${node.image_count} Images</span>
+                            </div>
+                            <div class="node-body">
+                                <div class="node-info">
+                                    <div class="node-status">
+                                        <span class="status-dot ${isCompleted ? 'completed' : 'pending'}"></span>
+                                        <span>${isCompleted ? 'Completed' : 'Pending'}</span>
+                                    </div>
+                                    <span>${node.image_count} image(s)</span>
+                                </div>
+                                <button class="btn btn-view-images" onclick="viewImages('${finding.id}', '${child.id}', '${node.id}', ${findingIndex}, ${childIndex}, ${nodeIndex})">
+                                    👁️ View Images
+                                </button>
+                                <button class="btn-generate" onclick="generateSteps(${findingIndex}, ${childIndex}, ${nodeIndex}, '${node.path}', '${finding.description.replace(/'/g, "\\'")}')">
+                                    🤖 Generate AI Steps
+                                </button>
+                                <div id="nodeDescription${findingIndex}_${childIndex}_${nodeIndex}"></div>
+                                ${node.has_description ? `
+                                    <div class="generated-description">
+                                        <h4>✅ Generated Steps:</h4>
+                                        <pre>${node.existing_description}</pre>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                        
+                        nodesGrid.appendChild(nodeCard);
+                    });
+                });
+            });
+        }
+
+        function toggleFinding(index) {
+            const content = document.getElementById(`findingContent${index}`);
+            const icon = document.getElementById(`toggleIcon${index}`);
+            content.classList.toggle('show');
+            icon.style.transform = content.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        function toggleChild(findingIndex, childIndex) {
+            const content = document.getElementById(`childContent${findingIndex}_${childIndex}`);
+            const icon = document.getElementById(`childToggleIcon${findingIndex}_${childIndex}`);
+            content.classList.toggle('show');
+            icon.style.transform = content.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        function generateSteps(findingIndex, childIndex, nodeIndex, nodePath, findingDescription) {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Generating...';
+            btn.classList.add('loading', 'generating');
+            
+            fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    node_path: nodePath,
+                    finding_description: findingDescription
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                btn.classList.remove('loading', 'generating');
+                
+                if (data.success) {
+                    // Update the UI with generated steps
+                    const descriptionDiv = document.getElementById(`nodeDescription${findingIndex}_${childIndex}_${nodeIndex}`);
+                    descriptionDiv.innerHTML = `
+                        <div class="generated-description">
+                            <h4>✅ Generated Steps:</h4>
+                            <pre>${data.combined_steps}</pre>
+                        </div>
+                    `;
+                    
+                    // Update the status indicator
+                    const nodeCard = btn.closest('.node-card');
+                    const statusDot = nodeCard.querySelector('.status-dot');
+                    const statusText = nodeCard.querySelector('.node-status span:last-child');
+                    statusDot.className = 'status-dot completed';
+                    statusText.textContent = 'Completed';
+                    
+                    showAlert(`Successfully generated steps for ${data.steps.length} image(s)`, 'success');
+                } else {
+                    showAlert(data.error || 'Generation failed', 'error');
+                }
+            })
+            .catch(error => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                btn.classList.remove('loading', 'generating');
+                showAlert('Error generating steps: ' + error.message, 'error');
+            });
+        }
+
+        function viewImages(findingId, childId, nodeId, findingIndex, childIndex, nodeIndex) {
+            if (!currentStructure) return;
+            
+            const finding = currentStructure[findingIndex];
+            const child = finding.children[childIndex];
+            const node = child.nodes[nodeIndex];
+            
+            if (node.images.length === 0) {
+                showAlert('No images found in this node', 'error');
+                return;
+            }
+            
+            // Show first image
+            previewImage(node.images[0], findingId, childId, nodeId);
+        }
+
+        function previewImage(imagePath, findingId, childId, nodeId) {
+            const modal = document.getElementById('imagePreviewModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalTitle = document.getElementById('modalTitle');
+            
+            modalTitle.textContent = `${findingId} > ${childId} > Step ${nodeId}`;
+            modalImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // Loading placeholder
+            
+            fetch(`/preview_image?path=${encodeURIComponent(imagePath)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.image) {
+                    modalImage.src = data.image;
+                } else {
+                    showAlert('Error loading image', 'error');
+                    closeImageModal();
+                }
+            })
+            .catch(error => {
+                showAlert('Error loading image: ' + error.message, 'error');
+                closeImageModal();
+            });
+            
+            modal.classList.add('show');
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imagePreviewModal');
+            modal.classList.remove('show');
+        }
+
+        function downloadZip() {
+            window.location.href = '/download_zip';
+        }
+
+        function resetUpload() {
+            if (confirm('Are you sure you want to upload a new file? All unsaved changes will be lost.')) {
+                location.reload();
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} show`;
+            alert.innerHTML = `
+                <strong>${type === 'success' ? '✅' : '❌'}</strong> ${message}
+            `;
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            }, 5000);
+        }
+
+        // Close modal on outside click
+        document.getElementById('imagePreviewModal').addEventListener('click', (e) => {
+            if (e.target.id === 'imagePreviewModal') {
+                closeImageModal();
+            }
+        });
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+    </script>
+</body>
+</html>
